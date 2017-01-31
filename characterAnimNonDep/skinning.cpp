@@ -114,6 +114,47 @@ void Skinning::computeTransfo(Skeleton *skel, int *idx) {
 void Skinning::computeWeights() {
 	if (_skin==NULL) return;
 	if (_skel==NULL) return;
+
+	/* TODO 
+	rajouter un truc pour pas avoir à tout recompiler quand on passe du skinning rigide au skinning lisse
+	
+	*/
+	/*
+	pour chaque vertex v
+		pour chaque joint j
+			on calcule la distance de v au joint
+			on conserve l'index du joint le plus proche de v
+		le bone le plus proche sera celui qui influera le vertex
+
+	Tous les poids w[i][j] sont mis à zero, sauf celui correspondant au joint le plus proche qui vaut alors 1
+	
+	*/
+
+	 for (int i = 0; i < _nbVtx; i++) {
+		glm::vec4 vertex = _pointsInit[i];
+		double minDist = numeric_limits<double>::infinity();
+		int minJoint;
+		for (int j = 0; j < _nbJoints; j++) {
+			
+			_weights[i][j] = 0;
+			glm::vec4 joint = _posBonesInit[j];
+			glm::vec3 vert = glm::vec3(vertex);
+			
+			if (glm::distance(vertex, joint)< minDist) {
+				minDist = glm::distance(vertex, joint);
+				minJoint = j;
+			}
+		}
+		_weights[i][minJoint] = 1;
+	} 
+
+
+	/*
+	
+
+
+	*/
+
 	
 }
 
@@ -149,9 +190,23 @@ void Skinning::loadWeights(std::string filename) {
 }
 
 void Skinning::paintWeights(std::string jointName) {
-	if (_skin==NULL) return;
-	if (_skel==NULL) return;
-	
+	if (_skin == NULL) return;
+	if (_skel == NULL) return;
+
+	//On récupére l'indice du joint 
+	int idJoint;
+	for (int j = 0; j < _nbJoints; j++) {
+		if (!_joints.at(j)->_name.compare(jointName)) {
+			idJoint = j;
+		}
+	}
+	//On initialise le vectur de couleurs (je crois qu'il existe pas forcément)
+	_skin->_colors = std::vector<glm::vec4>(_nbVtx);
+	//On met à jour _skin->_colors
+	for (int i = 0; i < _nbVtx; i++) {
+		double weight = _weights[i][idJoint];
+		_skin->_colors[i] = (glm::vec4(weight, 0.0, 0.0, 0.0));
+	}
 }
 
 void Skinning::animate() {
