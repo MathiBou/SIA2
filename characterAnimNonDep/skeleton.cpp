@@ -1,6 +1,7 @@
 #include "skeleton.h"
 #include <skeletonIO.h>
 #include <qglviewer.h>
+#include <iostream>
 
 
 using namespace std;
@@ -201,16 +202,20 @@ void Skeleton::quaternionToAxisAngle(qglviewer::Quaternion q, qglviewer::Vec *va
 {
 	double angle = 2.0*acos(q[3]);
 	qglviewer::Vec axis = qglviewer::Vec(q[0], q[1], q[2]);
-	const double sinus = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2]);
+	const double sinus = sqrt(q[1] * q[1] + q[2] * q[2] + q[0] * q[0]);
 	if (sinus > 1E-8)
 		axis /= sinus;
-
+		
 	if (angle > M_PI)
 	{
 		angle = 2.0*M_PI - angle;
 		axis = -axis;
 	}
-	*vaa = axis;
+	*vaa = axis*angle;
+	//qglviewer::Vec axis2 = q.axis();
+	//qreal angle2 = q.angle();
+
+
 }
 void Skeleton::eulerToAxisAngle(double rx, double ry, double rz, int rorder, qglviewer::Vec *vaa)
 {
@@ -227,14 +232,37 @@ void Skeleton::eulerToAxisAngle(double rx, double ry, double rz, int rorder, qgl
 void Skeleton::nbDofs() {
 	if (_dofs.empty()) return;
 
-	double tol = 1e-4;
+	double tol = 1;
 
-	int nbDofsR = -1;
+	int nbDofsR = 0;
 
 	// TO COMPLETE :
-	int isImplemented = 0;
+	int isImplemented = 1;
+	qglviewer::Vec vaaPrec, vaa;
+	double angle, anglePrec;
+	//animate(0);
+	anglePrec = vaaPrec.norm();
+	vaaPrec.normalize();
+	for (unsigned int j = 0; j < 20; j++) {
+		std::cout << "Frame number" << j << endl;
+		eulerToAxisAngle(_dofs[3]._values[j], _dofs[4]._values[j], _dofs[5]._values[j], 0, &vaa);
+		std::cout << vaa.x << " ; " << vaa.y << " ; " << vaa.z << endl;	
+		angle = vaa.norm();
+		vaa.normalize();
 
-	
+		double val = (vaaPrec - vaa).norm();
+		if (val > tol) {
+			nbDofsR = 2;
+		}
+		else if ((anglePrec - angle) > tol) {
+			nbDofsR = 1;
+		}
+
+		// Update vaaPrec
+		vaaPrec = vaa;
+		anglePrec = angle;
+	}
+
 	if (!isImplemented) return;
 	cout << _name << " : " << nbDofsR << " degree(s) of freedom in rotation\n";
 
