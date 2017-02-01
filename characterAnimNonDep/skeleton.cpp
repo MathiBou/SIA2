@@ -2,7 +2,7 @@
 #include <skeletonIO.h>
 #include <qglviewer.h>
 #include <iostream>
-
+#include <fstream>
 
 using namespace std;
 
@@ -244,35 +244,109 @@ void Skeleton::nbDofs() {
 
 	// TO COMPLETE :
 	int isImplemented = 1;
-    
+
+	double rx, ry, rz;
 	qglviewer::Vec vaa_prec, vaa;
 	double angle, angle_prec;
-    
-    eulerToAxisAngle(_dofs[3]._values[0], _dofs[4]._values[0], _dofs[5]._values[0], 0, &vaa_prec);
+
+	switch (_rorder) {
+	case roXYZ:
+		rx = _dofs[_dofs.size() - 3]._values[0];
+		ry = _dofs[_dofs.size() - 2]._values[0];
+		rz = _dofs[_dofs.size() - 1]._values[0];
+		break;
+	case roYZX:
+		rx = _dofs[_dofs.size() - 2]._values[0];
+		ry = _dofs[_dofs.size() - 1]._values[0];
+		rz = _dofs[_dofs.size() - 3]._values[0];
+		break;
+	case roZXY:
+		rx = _dofs[_dofs.size() - 1]._values[0];
+		ry = _dofs[_dofs.size() - 3]._values[0];
+		rz = _dofs[_dofs.size() - 2]._values[0];
+		break;
+	case roXZY:
+		rx = _dofs[_dofs.size() - 3]._values[0];
+		ry = _dofs[_dofs.size() - 1]._values[0];
+		rz = _dofs[_dofs.size() - 2]._values[0];
+		break;
+	case roYXZ:
+		rx = _dofs[_dofs.size() - 2]._values[0];
+		ry = _dofs[_dofs.size() - 3]._values[0];
+		rz = _dofs[_dofs.size() - 1]._values[0];
+		break;
+	case roZYX:
+		rx = _dofs[_dofs.size() - 1]._values[0];
+		ry = _dofs[_dofs.size() - 2]._values[0];
+		rz = _dofs[_dofs.size() - 3]._values[0];
+		break;
+	}
+	eulerToAxisAngle(rx, ry, rz, _rorder, &vaa_prec);
 	angle_prec = vaa_prec.norm();
 	vaa_prec.normalize();
-    
-    
-	for (unsigned int j = 1; j < _dofs[0]._values.size() ; j++) {
-		std::cout << "Frame number" << j << endl;
-		eulerToAxisAngle(_dofs[3]._values[j], _dofs[4]._values[j], _dofs[5]._values[j], 0, &vaa);
-		std::cout << vaa.x << " ; " << vaa.y << " ; " << vaa.z << endl;	
+
+	ofstream file_axis(_name +"_axis.txt", ios::out | ios::trunc); 
+	file_axis << 0 << " " << vaa_prec.x << " " << vaa_prec.y << " " << vaa_prec.z << endl;
+	ofstream file_angle(_name + "_angle.txt", ios::out | ios::trunc);
+	file_angle << 0 << " " << angle_prec << endl;
+	
+	for (unsigned int j = 1; j < _dofs[0]._values.size(); j++) {
+		switch (_rorder) {
+		case roXYZ:
+			rx = _dofs[_dofs.size() - 3]._values[j];
+			ry = _dofs[_dofs.size() - 2]._values[j];
+			rz = _dofs[_dofs.size() - 1]._values[j];
+			break;
+		case roYZX:
+			rx = _dofs[_dofs.size() - 2]._values[j];
+			ry = _dofs[_dofs.size() - 1]._values[j];
+			rz = _dofs[_dofs.size() - 3]._values[j];
+			break;
+		case roZXY:
+			rx = _dofs[_dofs.size() - 1]._values[j];
+			ry = _dofs[_dofs.size() - 3]._values[j];
+			rz = _dofs[_dofs.size() - 2]._values[j];
+			break;
+		case roXZY:
+			rx = _dofs[_dofs.size() - 3]._values[j];
+			ry = _dofs[_dofs.size() - 1]._values[j];
+			rz = _dofs[_dofs.size() - 2]._values[j];
+			break;
+		case roYXZ:
+			rx = _dofs[_dofs.size() - 2]._values[j];
+			ry = _dofs[_dofs.size() - 3]._values[j];
+			rz = _dofs[_dofs.size() - 1]._values[j];
+			break;
+		case roZYX:
+			rx = _dofs[_dofs.size() - 1]._values[j];
+			ry = _dofs[_dofs.size() - 2]._values[j];
+			rz = _dofs[_dofs.size() - 3]._values[j];
+			break;
+		}
+		eulerToAxisAngle(rx, ry, rz, _rorder, &vaa);
+		
 		angle = vaa.norm();
 		vaa.normalize();
+		file_axis << j << " " << vaa.x << " " << vaa.y << " " << vaa.z << endl;
+		file_angle << j << " " << angle << endl;
 
 		double val = (vaa_prec - vaa).norm();
-		if (val > tol) {
+		double valOpp = (vaa_prec + vaa).norm(); //si orientation opposée
+		if (((val > tol) && (valOpp > 2 - tol)) || ((valOpp > tol) && (val > 2 - tol))) {
+		//if (val > tol) {
 			nbDofsR = 2;
+			//break;
 		}
 		else if ((angle_prec - angle) > tol) {
 			nbDofsR = 1;
 		}
-
 		// Update vaaPrec
 		vaa_prec = vaa;
 		angle_prec = angle;
 	}
-
+	
+	file_axis.close();
+	file_angle.close();
 	if (!isImplemented) return;
 	cout << _name << " : " << nbDofsR << " degree(s) of freedom in rotation\n";
 
@@ -280,5 +354,5 @@ void Skeleton::nbDofs() {
 	for (unsigned int ichild = 0 ; ichild < _children.size() ; ichild++) {
 		_children[ichild]->nbDofs();
 	}
-
+	
 }
