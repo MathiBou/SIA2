@@ -54,12 +54,17 @@ void Skinning::recomputeWeights() {
 	if (_skel==NULL) return;
 
 	// Compute weights :
-	if (_meth) {
-		cout << "computing weights\n";
+	if (_meth == 0) {
+		cout << "computing rigid weights\n";
 		computeWeights();
-	} else {
+	} else if(_meth == 1) {
 		cout << "loading weights\n";
 		loadWeights("data/skinning.txt");
+	}
+	else {
+		cout << "computing linear weights";
+		computeLinearWeights();
+
 	}
 
 	// Test skinning :
@@ -110,6 +115,12 @@ void Skinning::computeTransfo(Skeleton *skel, int *idx) {
 	_transfoCurr[i0] = glm::transpose(_transfoCurr[i0]);
 }
 
+void Skinning::computeLinearWeights() {
+	if (_skin == NULL) return;
+	if (_skel == NULL) return;
+	
+
+}
 
 void Skinning::computeWeights() {
 	if (_skin==NULL) return;
@@ -147,15 +158,6 @@ void Skinning::computeWeights() {
 		}
 		_weights[i][minJoint] = 1;
 	} 
-
-
-	/*
-	
-
-
-	*/
-
-	
 }
 
 void Skinning::loadWeights(std::string filename) {
@@ -193,7 +195,7 @@ void Skinning::paintWeights(std::string jointName) {
 	if (_skin == NULL) return;
 	if (_skel == NULL) return;
 
-	//On récupére l'indice du joint 
+	//On récupére l'indice du joint "jointName" 
 	int idJoint;
 	for (int j = 0; j < _nbJoints; j++) {
 		if (!_joints.at(j)->_name.compare(jointName)) {
@@ -204,8 +206,7 @@ void Skinning::paintWeights(std::string jointName) {
 	_skin->_colors = std::vector<glm::vec4>(_nbVtx);
 	//On met à jour _skin->_colors
 	for (int i = 0; i < _nbVtx; i++) {
-		double weight = _weights[i][idJoint];
-		_skin->_colors[i] = (glm::vec4(weight, 0.0, 0.0, 0.0));
+		_skin->_colors[i] = (glm::vec4(_weights[i][idJoint], 0.0, 0.0, 0.0));
 	}
 }
 
@@ -228,5 +229,14 @@ void Skinning::animate() {
 }
 
 void Skinning::applySkinning() {
+
+	for (int i = 0; i < _nbVtx; i++) {
+		
+		_skin->_points[i] = glm::vec4(0.0, 0.0, 0.0, 0.0);
+			for (int j = 0; j < _nbJoints; j++) {
+				_skin->_points[i] += _weights[i][j] * _transfoCurr[j] * _transfoInitInv[j] * _pointsInit[i];
+			}
+			
+		}
 	
 }
