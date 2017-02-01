@@ -153,7 +153,7 @@ void Skeleton::eulerToMatrix(double rx, double ry, double rz, int rorder, glm::m
 }
 void Skeleton::matrixToQuaternion(glm::mat3 R, qglviewer::Quaternion *q)
 {
-	float trace;
+	/*float trace;
 	trace = R[0][0] + R[1][1] + R[2][2];
 	double q0, q1, q2, q3;
 
@@ -195,8 +195,14 @@ void Skeleton::matrixToQuaternion(glm::mat3 R, qglviewer::Quaternion *q)
 				q3 = (R[0][1] - R[1][0]) / s;
 			}
 	}
-	*q = qglviewer::Quaternion(q0, q1, q2, q3);
+	q->setValue(q0, q1, q2, q3);
 	(*q).normalize();
+     */
+    double q3 = sqrt(1.0 + R[0][0] + R[1][1] + R[2][2]) / 2.0;
+    double q0 = (R[2][1] - R[1][2])/(4 * q3);
+    double q1 = (R[0][2] - R[2][0])/(4 * q3);
+    double q2 = (R[1][0] - R[0][1])/(4 * q3);
+    q->setValue(q0, q1, q2, q3);
 }
 void Skeleton::quaternionToAxisAngle(qglviewer::Quaternion q, qglviewer::Vec *vaa)
 {
@@ -232,35 +238,39 @@ void Skeleton::eulerToAxisAngle(double rx, double ry, double rz, int rorder, qgl
 void Skeleton::nbDofs() {
 	if (_dofs.empty()) return;
 
-	double tol = 1;
+	double tol = 1e-4;
 
 	int nbDofsR = 0;
 
 	// TO COMPLETE :
 	int isImplemented = 1;
-	qglviewer::Vec vaaPrec, vaa;
-	double angle, anglePrec;
-	//animate(0);
-	anglePrec = vaaPrec.norm();
-	vaaPrec.normalize();
-	for (unsigned int j = 0; j < 20; j++) {
+    
+	qglviewer::Vec vaa_prec, vaa;
+	double angle, angle_prec;
+    
+    vaa_prec = eulerToAxisAngle(_dofs[3]._values[0], _dofs[4]._values[0], _dofs[5]._values[0], 0, &vaa);
+	anglePrec = vaa_prec.norm();
+	vaa_prec.normalize();
+    
+    
+	for (unsigned int j = 1; j < _dofs[0]._values.size() ; j++) {
 		std::cout << "Frame number" << j << endl;
 		eulerToAxisAngle(_dofs[3]._values[j], _dofs[4]._values[j], _dofs[5]._values[j], 0, &vaa);
 		std::cout << vaa.x << " ; " << vaa.y << " ; " << vaa.z << endl;	
 		angle = vaa.norm();
 		vaa.normalize();
 
-		double val = (vaaPrec - vaa).norm();
+		double val = (vaa_prec - vaa).norm();
 		if (val > tol) {
 			nbDofsR = 2;
 		}
-		else if ((anglePrec - angle) > tol) {
+		else if ((angle_prec - angle) > tol) {
 			nbDofsR = 1;
 		}
 
 		// Update vaaPrec
-		vaaPrec = vaa;
-		anglePrec = angle;
+		vaa_prec = vaa;
+		angle_prec = angle;
 	}
 
 	if (!isImplemented) return;
