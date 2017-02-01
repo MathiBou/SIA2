@@ -248,8 +248,8 @@ void Skeleton::nbDofs() {
 	qglviewer::Vec vaa_prec, vaa;
 	double angle, angle_prec;
     
-    vaa_prec = eulerToAxisAngle(_dofs[3]._values[0], _dofs[4]._values[0], _dofs[5]._values[0], 0, &vaa);
-	anglePrec = vaa_prec.norm();
+    eulerToAxisAngle(_dofs[3]._values[0], _dofs[4]._values[0], _dofs[5]._values[0], 0, &vaa_prec);
+	angle_prec = vaa_prec.norm();
 	vaa_prec.normalize();
     
     
