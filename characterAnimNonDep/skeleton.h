@@ -77,6 +77,9 @@ public :
 	void draw();
 	void rotateSkeleton();
 	void animate(int iframe=0);
+	
+	static Skeleton* setPoseInterpolation(std::string file1, int lastframe1, std::string file2, int firstframe2, float interpolationValue);
+
 
 	// Analysis of degrees of freedom :
 	static void eulerToMatrix(double rx, double ry, double rz, int rorder, glm::mat3 *R);
