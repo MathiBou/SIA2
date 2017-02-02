@@ -22,4 +22,6 @@ void defineRotateOrder(Skeleton *skel);
 
 void skipTransitionFrames(int nbTransitionFrames, Skeleton* root);
 void updateTransitionFrames(int nbFrames, int nbTransitionFrames, Skeleton* root);
+void updateTransitionFramesQuaternion(int nbFrames, int nbTransitionFrames, Skeleton* root);
+
 #endif
