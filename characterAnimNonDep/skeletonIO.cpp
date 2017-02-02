@@ -81,7 +81,7 @@ Skeleton* readHierarchy(std::ifstream &inputfile) {
 }
 
 Skeleton* interpolate(std::ifstream &inputfile1, std::ifstream &inputfile2) {
-	
+
 	cout << "interpolate" << endl;
 
 	string word;
@@ -177,9 +177,9 @@ Skeleton* interpolate(std::ifstream &inputfile1, std::ifstream &inputfile2) {
 
 	}
 
-	interpolateMotion(inputfile1, inputfile2, root); 
+	interpolateMotion(inputfile1, inputfile2, root);
 
-	return root; 
+	return root;
 }
 
 Skeleton* transition(std::ifstream &inputfile1, std::ifstream &inputfile2) {
@@ -278,26 +278,34 @@ Skeleton* transition(std::ifstream &inputfile1, std::ifstream &inputfile2) {
 		}
 
 	}
-	int nbTransitionFrames = 10;
+	int nbTransitionFrames = 20;
+	double deltaX, deltaY, deltaZ = 0; 
 
-	std::vector<double> offset = transitionMotion(inputfile1, root, 0,0,0);
-	cout << "offset" << offset[0] << " " << offset[1] << " " << offset[2] << endl; 
-	int nbFrames = root->_dofs.at(0)._values.size(); 
-	skipTransitionFrames(nbTransitionFrames, root); 
-	//POURQUOI +5 obligé ??? PB d'offset 
-	std::vector<double> osef = transitionMotion(inputfile2, root, offset[0], offset[1], offset[2] + 5);
-	updateTransitionFrames(nbFrames, nbTransitionFrames, root); 
+	std::vector<double> offset = transitionMotion(inputfile1, root, 0, 0, 0);
+	cout << "offset" << offset[0] << " " << offset[1] << " " << offset[2] << endl;
+	
+	int nbFrames = root->_dofs.at(0)._values.size();
+	
+	skipTransitionFrames(nbTransitionFrames, root);
+	
+	deltaX = abs(root->_dofs.at(0)._values.at(0) - root->_dofs.at(0)._values.at(nbTransitionFrames)); 
+	deltaY = abs(root->_dofs.at(1)._values.at(0) - root->_dofs.at(1)._values.at(nbTransitionFrames));
+	deltaZ = abs(root->_dofs.at(2)._values.at(0) - root->_dofs.at(2)._values.at(nbTransitionFrames));
+	cout << "delta" << deltaX << " " << deltaY << " " << deltaZ << endl;
+
+	std::vector<double> osef = transitionMotion(inputfile2, root, offset[0] + deltaX, offset[1] + deltaY, offset[2] + deltaZ);
+	updateTransitionFrames(nbFrames, nbTransitionFrames, root);
 	cout << "passed both trMotion" << endl;
 	return root;
 }
 
 void updateTransitionFrames(int nbFrames, int nbTransitionFrames, Skeleton* root) {
 	for (int j = 0; j < root->_dofs.size(); j++) {
-		double first = root->_dofs.at(j)._values.at(nbFrames - 1); 
+		double first = root->_dofs.at(j)._values.at(nbFrames - 1);
 		double last = root->_dofs.at(j)._values.at(nbFrames + nbTransitionFrames);
-		double weight = 0.9;
-		for (int i = nbFrames; i < (nbFrames+nbTransitionFrames); i++) {
-			root->_dofs.at(j)._values[i] = weight*first + (1-weight)*last ;
+		double weight = 1;
+		for (int i = nbFrames; i < (nbFrames + nbTransitionFrames); i++) {
+			root->_dofs.at(j)._values[i] = weight*first + (1 - weight)*last;
 			weight -= (1.0 / (double)nbTransitionFrames);
 		}
 	}
@@ -309,7 +317,7 @@ void updateTransitionFrames(int nbFrames, int nbTransitionFrames, Skeleton* root
 }
 
 void skipTransitionFrames(int nbTransitionFrames, Skeleton* root){
-	
+
 	for (int i = 0; i < nbTransitionFrames; i++) {
 		for (int j = 0; j < root->_dofs.size(); j++) {
 			root->_dofs.at(j)._values.push_back(0);
@@ -576,7 +584,8 @@ void readMotion(std::ifstream &inputfile, Skeleton* root) {
 	// Read all the frames
 	for (int i = 0; i < nbFrames; i++) {
 		// The reading begins at the beginning of each word
-		readKeyFrame(inputfile, root);
+		//HERE
+		readKeyFrame(inputfile, root, true);
 	}
 }
 
@@ -594,8 +603,6 @@ std::vector<double> transitionMotion(std::ifstream &inputfile, Skeleton* root, d
 
 	int nbFrames;
 	istringstream(word) >> nbFrames;
-	cout << "passed nb frames" << endl;
-	cout << nbFrames << endl;
 
 	// Get the sampling rate
 	inputfile >> word; inputfile >> word;
@@ -609,9 +616,20 @@ std::vector<double> transitionMotion(std::ifstream &inputfile, Skeleton* root, d
 
 	double lastX, lastY, lastZ = 0;
 	// Read all the frames
+	//for (int i = 0; i < nbFrames; i++) {
 	for (int i = 0; i < nbFrames; i++) {
+
 		// The reading begins at the beginning of each word
-		readKeyFrame(inputfile, root, X, Y, Z);
+		//if first frame
+		if (i == 0)
+		{
+			readKeyFrame(inputfile, root, true, X, Y, Z);
+		}
+		//other frames
+		else {
+			readKeyFrame(inputfile, root, false, X, Y, Z);
+		}
+		//last frame
 		if (i == nbFrames - 1) {
 			lastX = root->_dofs[0]._values[i];
 			lastY = root->_dofs[1]._values[i];
@@ -625,9 +643,9 @@ std::vector<double> transitionMotion(std::ifstream &inputfile, Skeleton* root, d
 }
 
 void interpolateMotion(std::ifstream &inputfile1, std::ifstream &inputfile2, Skeleton* root) {
-	
-	cout << "interpolation Motion" << endl; 
-	
+
+	cout << "interpolation Motion" << endl;
+
 	string word;
 	size_t foundKeyWord;
 
@@ -656,9 +674,9 @@ void interpolateMotion(std::ifstream &inputfile1, std::ifstream &inputfile2, Ske
 	cout << nbFrames2 << endl;
 
 
-	int nbFrames; 
+	int nbFrames;
 	if (nbFrames1 < nbFrames2)
-		nbFrames = nbFrames1; 
+		nbFrames = nbFrames1;
 	else nbFrames = nbFrames2;
 	cout << "passed nb frames" << endl;
 	cout << nbFrames << endl;
@@ -685,7 +703,7 @@ void interpolateMotion(std::ifstream &inputfile1, std::ifstream &inputfile2, Ske
 
 	float sampleRate = sampleRate1;
 	if (sampleRate1 != sampleRate2)
-		sampleRate = (sampleRate1 + sampleRate2) / 2.0; 
+		sampleRate = (sampleRate1 + sampleRate2) / 2.0;
 
 	cout << "passed sample rate" << endl;
 
@@ -698,10 +716,12 @@ void interpolateMotion(std::ifstream &inputfile1, std::ifstream &inputfile2, Ske
 	}
 }
 
-void readKeyFrame(std::ifstream &inputfile, Skeleton* skel, double Xinit, double Yinit, double Zinit) {
+void readKeyFrame(std::ifstream &inputfile, Skeleton* skel, bool isFirstFrame, double Xinit, double Yinit, double Zinit) {
+	static double firstValX = 0; 
+	static double firstValY = 0;
+	static double firstValZ = 0;
 	
-	static double firstValX, firstValY, firstValZ;
-	static bool isFirstFrame = true;
+	static ofstream file("Zpos.txt", ios::out | ios::trunc);
 
 	string word;
 	// Read the values for all the joint's own dofs
@@ -711,21 +731,23 @@ void readKeyFrame(std::ifstream &inputfile, Skeleton* skel, double Xinit, double
 			double val;
 			istringstream(word) >> val;
 
-
 			if (i == 0) {
-				if (isFirstFrame) {
+				if ((isFirstFrame) && Xinit !=0) { //first frame de la deuxieme animation
 					firstValX = val;
 				}
 
 				if (Xinit != 0) {
-					skel->_dofs[i]._values.push_back(Xinit + (val-firstValX));
+					skel->_dofs[i]._values.push_back(Xinit + (val - firstValX));
+					//cout << "X position  " << skel->_name << "  "<< Xinit + (val - firstValX) << endl ;
 				}
 				else {
 					skel->_dofs[i]._values.push_back(val + Xinit);
+					//cout << "X position" << skel->_name << val + Xinit << endl ;
+
 				}
 			}
 			else if (i == 1) {
-				if (isFirstFrame) {
+				if ((isFirstFrame) && Yinit != 0) { //first frame de la deuxieme animation
 					firstValY = val;
 				}
 				if (Yinit != 0) {
@@ -736,12 +758,21 @@ void readKeyFrame(std::ifstream &inputfile, Skeleton* skel, double Xinit, double
 				}
 			}
 			else if (i == 2) {
-				if (isFirstFrame) {
+				if ((isFirstFrame) && Zinit != 0) { //first frame de la deuxieme animation
 					firstValZ = val;
 					isFirstFrame = false;
+					file << "first frame" << endl;
+					file << "Z val first frame" << val << endl;
+
 				}
 				if (Zinit != 0) {
-					skel->_dofs[i]._values.push_back(Zinit + (val - firstValZ));
+					file << "is root ? " << skel->_name << endl;
+					file << "Zinit" << Zinit << endl; 
+					file << "firstValZ" << firstValZ << endl;
+					file << "val" << val << endl;
+					file << "Zpos " << Zinit + (val - firstValZ) << endl;
+
+					skel->_dofs[i]._values.push_back(Zinit + (val - firstValZ));		
 				}
 				else {
 					skel->_dofs[i]._values.push_back(val + Zinit);
@@ -764,7 +795,7 @@ void readKeyFrame(std::ifstream &inputfile, Skeleton* skel, double Xinit, double
 }
 
 void interpolateKeyFrame(std::ifstream &inputfile1, std::ifstream &inputfile2, Skeleton* skel) {
-	
+
 	cout << "interpolateFrame" << endl;
 
 	string word1, word2;
@@ -779,7 +810,7 @@ void interpolateKeyFrame(std::ifstream &inputfile1, std::ifstream &inputfile2, S
 			double val2;
 			istringstream(word2) >> val2;
 
-			double val = (val1 + val2) / 2.0; 
+			double val = (val1 + val2) / 2.0;
 
 			skel->_dofs[i]._values.push_back(val);
 		}
