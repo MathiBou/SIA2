@@ -83,6 +83,7 @@ public :
 	static Skeleton* interpolateFromFiles(std::string file1, std::string file2);
 
 	static Skeleton* transitionQuaternions(Skeleton* first, Skeleton* second, int nbTransitionFrames);
+	static void loop(Skeleton* root, Skeleton* second, int nbTransitionFrames, double TX, double TY, double TZ, double RX, double RY, double RZ);
 
 
 	// Analysis of degrees of freedom :
