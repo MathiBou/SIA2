@@ -50,6 +50,7 @@ public :
 	void getBonesPos(Skeleton *skel, int *idx);
 	// build _transfoCurr :
 	void computeTransfo(Skeleton *skel, int *idx);
+	void getWeights(Skeleton *skel, int *idx);
 
 	// build _weights :
 	void computeWeights();					// compute from data

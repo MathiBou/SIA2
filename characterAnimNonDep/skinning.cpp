@@ -62,7 +62,6 @@ void Skinning::recomputeWeights() {
 		cout << "computing rigid weights\n";
 		if (_skinningType) {
 			computeWeightsSmooth();
-			_meth = 1;
 		}
 		else {
 			computeWeights();
@@ -129,47 +128,81 @@ void Skinning::computeTransfo(Skeleton *skel, int *idx) {
 void Skinning::computeWeightsSmooth() {
 	if (_skin == NULL) return;
 	if (_skel == NULL) return;
-	
 	cout << "compute smooth weights" << endl;
+
+
 	
-	/*for (int i = 0; i < _nbVtx; i++) {
-		double weight;
+	
+	//int i = 0;
+	for (int i = 0; i < _nbVtx; i++) {
+		double minDist = numeric_limits<double>::infinity();
+		double dist, dist1, dist2, weight = 0;
+		int jointMin1, jointMin2 = 0;
 		double sum = 0;
 		glm::vec4 vertex = _pointsInit[i];
+		//cout << "position = " << vertex.x << " " << vertex.y << " " << vertex.z << endl;
+		glm::vec3 jointA, jointB, x;
+		int fils;
 		for (int j = 0; j < _nbJoints; j++) {
-			glm::vec3 joint;
-			glm::vec3 jointA(_transfoInit[j][3][0], _transfoInit[j][3][1], _transfoInit[j][3][2]);
-			glm::vec3 center = glm::vec3(_posBonesInit[j]);
-			if (center.x == jointA.x && center.y == jointA.y && center.z == jointA.z) {
-				_weights[i][j] = 0;
-			}
-			else {
-				glm::vec3 jointB(center + (center - jointA));
-				glm::vec3 vert = glm::vec3(vertex);
-				glm::vec3 u1 = vert - jointA;
-				glm::vec3 u2 = jointB - jointA;
-				float norm2 = u2.x*u2.x + u2.y*u2.y + u2.z*u2.z;
-				float p = glm::dot(u1, u2) / (norm2);
-				if (p < 0) {
-					joint = jointA;
+			_weights[i][j] = 0;
+			jointA = glm::vec3(_transfoInit[j][3][0], _transfoInit[j][3][1], _transfoInit[j][3][2]);
+			for (unsigned int ichild = 0; ichild < _joints.at(j)->_children.size(); ichild++) {
+				Skeleton *child = _joints.at(j)->_children[ichild];
+				for (int m = 0; m < _nbJoints; m++) {
+					if (_joints.at(m) == child) {
+						fils = m;
+					}
 				}
-				else if (p > 1) {
-					joint = jointB;
+
+				if (_joints.at(j)->_children.size() != 0) {
+					jointB = glm::vec3(_transfoInit[fils][3][0], _transfoInit[fils][3][1], _transfoInit[fils][3][2]);
+
+					glm::vec3 vert = glm::vec3(vertex);
+					glm::vec3 u1 = vert - jointA;
+					glm::vec3 u2 = jointB - jointA;
+					float norm2 = u2.x*u2.x + u2.y*u2.y + u2.z*u2.z;
+
+					if (norm2 != 0) {
+						float p = glm::dot(u1, u2) / (norm2);
+						if (p >= 0 && p <= 1) {
+							x = jointA + p*u2;
+							dist = glm::distance(vert, x);
+							if (dist < minDist) {
+								minDist = dist;
+								jointMin1 = j;
+								jointMin2 = fils;
+								//cout << _joints.at(jointMin1)->_name << endl;
+								//cout << _joints.at(jointMin2)->_name << endl;
+								dist1 = glm::distance(x, jointA);
+								dist2 = glm::distance(x, jointB);
+
+							}
+						}
+					}
 				}
-				else {
-					joint = jointA + p*u2;
-				}
-				weight = exp(-glm::distance(vert, joint));
-				_weights[i][j] = weight;
-				sum += weight;
 			}
 		}
+
+		_weights[i][jointMin1] = dist1 / (dist1 + dist2);
+		_weights[i][jointMin2] = dist2 / (dist1 + dist2);
 		for (int j = 0; j < _nbJoints; j++) {
-			_weights[i][j] /= sum;
+			//cout << _weights[i][j] << endl;
 		}
-		
-	}*/
+		//cout << _weights[i][jointMin1] << " " << _weights[i][jointMin2] << endl;
+
+	}
+	for (int j = 0; j < _nbJoints; j++) {
+		cout << _joints.at(j)->_name << " " << _transfoInit[j][3][0] << " " << _transfoInit[j][3][1] << " " << _transfoInit[j][3][2] << endl;
+	}
+	cout << "end compute smooth weights" << endl;
+}
+
+/*void Skinning::computeWeightsSmooth() {
+	if (_skin == NULL) return;
+	if (_skel == NULL) return;
 	
+	cout << "compute smooth weights" << endl;
+
 	double weight;
 	for (int i = 0; i < _nbVtx; i++) {
 		glm::vec4 vertex = _pointsInit[i];
@@ -185,9 +218,8 @@ void Skinning::computeWeightsSmooth() {
 			_weights[i][j] /= sum;
 		}
 	}
-
 	cout << "end compute smooth" << endl;
-}
+}*/
 
 void Skinning::computeWeights() {
 	if (_skin==NULL) return;
@@ -272,6 +304,9 @@ void Skinning::paintWeights(std::string jointName) {
 	//On initialise le vectur de couleurs (je crois qu'il existe pas forcément)
 	_skin->_colors = std::vector<glm::vec4>(_nbVtx);
 	//On met à jour _skin->_colors
+	/*for (int i = 0; i < 20; i++) {
+		_skin->_colors[i] = (glm::vec4(0.0, 0.0, 1.0, 0.0));
+	}*/
 	for (int i = 0; i < _nbVtx; i++) {
 		_skin->_colors[i] = (glm::vec4(_weights[i][idJoint], 0.0, 0.0, 0.0));
 	}
