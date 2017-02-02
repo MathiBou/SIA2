@@ -215,7 +215,23 @@ void Viewer::init()
 
   // Load skeleton :
   _root = NULL;
-  _root = Skeleton::setPoseInterpolation("data/walk.bvh",0,"data/run.bvh",0,0);
+
+  _root = Skeleton::createFromFile("data/walk.bvh");
+ /* _root = Skeleton::setPoseInterpolation("data/run.bvh", 0, "data/walk.bvh", 0, 0);
+
+  //Transition Quaternions 
+  _root = NULL;
+  Skeleton* first = NULL;
+  first = Skeleton::createFromFile("data/walk.bvh");
+
+  Skeleton* second = NULL;
+  second = Skeleton::createFromFile("data/walk.bvh");
+
+  int nbTransitionFrames = 10; 
+  _root = Skeleton::transitionQuaternions(first, second, nbTransitionFrames); 
+  */
+
+
   if (_root->_dofs.size())
 	  _nframes = _root->_dofs[0]._values.size();
   else
