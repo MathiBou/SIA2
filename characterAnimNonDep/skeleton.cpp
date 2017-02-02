@@ -84,6 +84,28 @@ Skeleton* Skeleton::setPoseInterpolation(std::string file1, int lastframe1, std:
 }
 
 
+Skeleton* Skeleton::transitionQuaternions(Skeleton* first, Skeleton* second, int nbTransitionFrames) {
+	Skeleton* root = create("hip", first->_offX, first->_offY, first->_offZ, NULL); 
+	root->_children = first->_children; 
+	root->_dofs = first->_dofs; 
+
+	for (int i = 0; i < root->_dofs.size(); i++) {
+		//Add empty transition frames
+		for (int j = 0; j < nbTransitionFrames; j++) {
+			root->_dofs.at(i)._values.push_back(0); 
+		}
+		//Add values for second anim
+		for (int k = 0; k < second->_dofs.at(0)._values.size(); k++) {
+			root->_dofs.at(i)._values.push_back(second->_dofs.at(0)._values.at(k) );
+		}
+	}
+
+	cout << "NB frames in root : " << root->_dofs.at(0)._values.size() << endl;
+
+	return root;
+}
+
+
 
 void drawBone(Skeleton *child)
 {
