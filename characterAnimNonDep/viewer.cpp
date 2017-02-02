@@ -3,7 +3,7 @@
 
 using namespace std;
 
-std::string jointNameCol = "lhumerus";
+std::string jointNameCol = "hip";
 
 #if _SKINNING_GPU
 #define BUFFER_OFFSET(a) ((char*)NULL + (a))
@@ -215,7 +215,7 @@ void Viewer::init()
 
   // Load skeleton :
   _root = NULL;
-  _root = Skeleton::createFromFile("data/walk.bvh");
+  _root = Skeleton::setPoseInterpolation("data/walk.bvh",0,"data/run.bvh",0,0);
   if (_root->_dofs.size())
 	  _nframes = _root->_dofs[0]._values.size();
   else
@@ -236,7 +236,7 @@ void Viewer::init()
   _skinning->_skin = _human;
   _skinning->_skel = _root;
   _skinning->init();
-  //_skinning->paintWeights(jointNameCol);
+  _skinning->paintWeights(jointNameCol);
 
 #if _SKINNING_GPU
   glewInit();

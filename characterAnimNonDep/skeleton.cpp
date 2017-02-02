@@ -387,8 +387,8 @@ void Skeleton::nbDofs() {
 		double valOpp = (vaa_prec + vaa).norm(); //si orientation opposée
 		if (((val > tol) && (valOpp > 2 - tol)) || ((valOpp > tol) && (val > 2 - tol))) {
 			//if (val > tol) {
-			nbDofsR = 2;
-			//break;
+			nbDofsR = 3;
+			break;
 		}
 		else if ((angle_prec - angle) > tol) {
 			nbDofsR = 1;

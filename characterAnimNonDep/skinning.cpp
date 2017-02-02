@@ -47,6 +47,10 @@ void Skinning::init() {
 
 	// Test skinning :
 	animate();
+
+	/*for (int k = 0; k < _nbJoints; k++) {
+		paintWeights(_joints.at(k)->_name);
+	}*/
 }
 
 void Skinning::recomputeWeights() {
@@ -56,14 +60,21 @@ void Skinning::recomputeWeights() {
 	// Compute weights :
 	if (_meth == 0) {
 		cout << "computing rigid weights\n";
-		computeWeights();
+		if (_skinningType) {
+			computeWeightsSmooth();
+			_meth = 1;
+		}
+		else {
+			computeWeights();
+		}
+		_skinningType = !_skinningType;
 	} else if(_meth == 1) {
 		cout << "loading weights\n";
 		loadWeights("data/skinning.txt");
 	}
 	else {
 		cout << "computing linear weights";
-		computeLinearWeights();
+		//computeLinearWeights();
 
 	}
 
@@ -115,11 +126,67 @@ void Skinning::computeTransfo(Skeleton *skel, int *idx) {
 	_transfoCurr[i0] = glm::transpose(_transfoCurr[i0]);
 }
 
-void Skinning::computeLinearWeights() {
+void Skinning::computeWeightsSmooth() {
 	if (_skin == NULL) return;
 	if (_skel == NULL) return;
 	
+	cout << "compute smooth weights" << endl;
+	
+	/*for (int i = 0; i < _nbVtx; i++) {
+		double weight;
+		double sum = 0;
+		glm::vec4 vertex = _pointsInit[i];
+		for (int j = 0; j < _nbJoints; j++) {
+			glm::vec3 joint;
+			glm::vec3 jointA(_transfoInit[j][3][0], _transfoInit[j][3][1], _transfoInit[j][3][2]);
+			glm::vec3 center = glm::vec3(_posBonesInit[j]);
+			if (center.x == jointA.x && center.y == jointA.y && center.z == jointA.z) {
+				_weights[i][j] = 0;
+			}
+			else {
+				glm::vec3 jointB(center + (center - jointA));
+				glm::vec3 vert = glm::vec3(vertex);
+				glm::vec3 u1 = vert - jointA;
+				glm::vec3 u2 = jointB - jointA;
+				float norm2 = u2.x*u2.x + u2.y*u2.y + u2.z*u2.z;
+				float p = glm::dot(u1, u2) / (norm2);
+				if (p < 0) {
+					joint = jointA;
+				}
+				else if (p > 1) {
+					joint = jointB;
+				}
+				else {
+					joint = jointA + p*u2;
+				}
+				weight = exp(-glm::distance(vert, joint));
+				_weights[i][j] = weight;
+				sum += weight;
+			}
+		}
+		for (int j = 0; j < _nbJoints; j++) {
+			_weights[i][j] /= sum;
+		}
+		
+	}*/
+	
+	double weight;
+	for (int i = 0; i < _nbVtx; i++) {
+		glm::vec4 vertex = _pointsInit[i];
+		double sum = 0;
+		for (int j = 0; j < _nbJoints; j++) {
+			glm::vec4 joint = _posBonesInit[j];
+			glm::vec3 vert = glm::vec3(vertex);
+			weight = exp(-glm::distance(vertex, joint));
+			_weights[i][j] = weight;
+			sum += weight;
+			}
+		for (int j = 0; j < _nbJoints; j++) {
+			_weights[i][j] /= sum;
+		}
+	}
 
+	cout << "end compute smooth" << endl;
 }
 
 void Skinning::computeWeights() {

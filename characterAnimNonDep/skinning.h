@@ -28,6 +28,7 @@ public :
 	std::vector<glm::mat4> _transfoCurr;			// current global transformation of bones
 
 	int _meth;	//method to compute weights 1 : computeWeights(), 0 : load from Maya
+	bool _skinningType; //type of skinning : 0 for hard skinning, 1 for smooth skinning
 	
 public :
 	Skinning() {
@@ -35,6 +36,7 @@ public :
 		_skel = NULL;
 		_nbJoints = 0;
 		_meth = 1;
+		_skinningType = 0;
 	}
 	~Skinning() {
 	}
@@ -51,6 +53,7 @@ public :
 
 	// build _weights :
 	void computeWeights();					// compute from data
+	void computeWeightsSmooth();
 	void loadWeights(std::string filename);	// load from file extracted from Maya
 	// re-initialize weights :
 	void recomputeWeights();
