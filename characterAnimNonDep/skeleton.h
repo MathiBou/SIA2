@@ -91,6 +91,10 @@ public :
 	static void matrixToQuaternion(glm::mat3 R, qglviewer::Quaternion *q);
 	static void quaternionToAxisAngle(qglviewer::Quaternion q, qglviewer::Vec *vaa);
 	static void eulerToAxisAngle(double rx, double ry, double rz, int rorder, qglviewer::Vec *vaa);
+	
+	static void toEulerianAngle(const qglviewer::Quaternion& q, double& roll, double& pitch, double& yaw);
+
+	
 	void nbDofs();
 };
 
