@@ -299,7 +299,110 @@ Skeleton* transition(std::ifstream &inputfile1, std::ifstream &inputfile2) {
 	return root;
 }
 
+void updateTransitionFramesQuaternion(int nbFrames, int nbTransitionFrames, Skeleton* root) {
+	
+	cout << "update transition frames quaternion" << endl;
+
+	bool isRoot = (root->_name == "hip");
+	glm::mat3 RFirst, RLast;
+	qglviewer::Quaternion qFirst, qLast;
+	float rx, ry, rz, px, py, pz;
+	if (isRoot) {
+
+		cout << "IS ROOT" << endl;
+		//get last position of walk
+		px = root->_dofs.at(0)._values.at(nbFrames - 1);
+		py = root->_dofs.at(1)._values.at(nbFrames - 1);
+		pz = root->_dofs.at(2)._values.at(nbFrames - 1);
+
+		//get first quaternion
+		rx = root->_dofs.at(3)._values.at(nbFrames - 1);
+		ry = root->_dofs.at(4)._values.at(nbFrames - 1);
+		rz = root->_dofs.at(5)._values.at(nbFrames - 1);
+
+
+
+		Skeleton::eulerToMatrix(M_PI*rx / 180.0, M_PI*ry / 180.0, M_PI*rz / 180.0, 0, &RFirst);
+		cout << "after eulerToMatrix" << endl; 
+		Skeleton::matrixToQuaternion(RFirst, &qFirst);
+		cout << "after matrix to Quaternion" << endl;
+
+		//get last quaternion
+		rx = root->_dofs.at(3)._values.at(nbFrames + nbTransitionFrames);
+		ry = root->_dofs.at(4)._values.at(nbFrames + nbTransitionFrames);
+		rz = root->_dofs.at(5)._values.at(nbFrames + nbTransitionFrames);
+		Skeleton::eulerToMatrix(rx, ry, rz, 0, &RLast);
+		cout << "after eulerToMatrix" << endl;
+
+		Skeleton::matrixToQuaternion(RLast, &qLast);
+		cout << "after matrix to Quaternion" << endl;
+	}
+	else {
+		cout << "NOT ROOT" << endl;
+		cout << root->_name << endl; 
+		if (root->_name == "End") {
+			cout << "END ??? " << endl;
+			goto Skip; 
+		}
+		//get first quaternion
+		rx = root->_dofs.at(0)._values.at(nbFrames - 1);
+		ry = root->_dofs.at(1)._values.at(nbFrames - 1);
+		rz = root->_dofs.at(2)._values.at(nbFrames - 1);
+		cout << "got first euler angle" << endl;
+		Skeleton::eulerToMatrix(rx, ry, rz, 0, &RFirst);
+		cout << "passed euler to matrix" << endl;
+		Skeleton::matrixToQuaternion(RFirst, &qFirst); 
+		cout << "passed matrix to quaternion" << endl;
+
+		//get last quaternion
+
+		cout << "size" << root->_dofs.at(0)._values.size() << " " << nbFrames + nbTransitionFrames << endl;
+
+		rx = root->_dofs.at(0)._values.at(nbFrames + nbTransitionFrames);
+		ry = root->_dofs.at(1)._values.at(nbFrames + nbTransitionFrames);
+		rz = root->_dofs.at(2)._values.at(nbFrames + nbTransitionFrames);
+		cout << "got second euler angle" << endl;
+
+		Skeleton::eulerToMatrix(rx, ry, rz, 0, &RLast);
+		cout << "passed euler to matrix" << endl;
+		Skeleton::matrixToQuaternion(RLast, &qLast);
+		cout << "passed matrix to quaternion" << endl;
+	}
+
+	qglviewer::Quaternion q;
+	float t = 1; 
+	double roll, pitch, yaw; 
+	for (int i = nbFrames; i < (nbFrames + nbTransitionFrames); i++) {
+		q = qglviewer::Quaternion::slerp(qFirst, qLast, t); 
+		t -= (1.0 / (float)nbTransitionFrames); 
+		Skeleton::toEulerianAngle(q, roll, pitch, yaw);
+		if (isRoot) {
+
+			root->_dofs.at(0)._values[i] = px;
+			root->_dofs.at(1)._values[i] = py;
+			root->_dofs.at(2)._values[i] = pz;
+
+			root->_dofs.at(3)._values[i] = roll; 
+			root->_dofs.at(4)._values[i] = pitch;
+			root->_dofs.at(5)._values[i] = yaw;
+		}
+		else {
+			root->_dofs.at(0)._values[i] = roll;
+			root->_dofs.at(1)._values[i] = pitch;
+			root->_dofs.at(2)._values[i] = yaw;
+		}
+	}
+	Skip :
+	cout << "begin recursive call" << endl;
+	// Recursive call for all its children
+	for (Skeleton* child : root->_children) {
+		cout << "recursive  " << child->_name << endl;
+		updateTransitionFramesQuaternion(nbFrames, nbTransitionFrames, child);
+	}
+}
+
 void updateTransitionFrames(int nbFrames, int nbTransitionFrames, Skeleton* root) {
+	cout << "update frames" << endl;
 	for (int j = 0; j < root->_dofs.size(); j++) {
 		double first = root->_dofs.at(j)._values.at(nbFrames - 1);
 		double last = root->_dofs.at(j)._values.at(nbFrames + nbTransitionFrames);
@@ -309,11 +412,11 @@ void updateTransitionFrames(int nbFrames, int nbTransitionFrames, Skeleton* root
 			weight -= (1.0 / (double)nbTransitionFrames);
 		}
 	}
+
 	// Recursive call for all its children
 	for (Skeleton* child : root->_children) {
 		updateTransitionFrames(nbFrames, nbTransitionFrames, child);
 	}
-
 }
 
 void skipTransitionFrames(int nbTransitionFrames, Skeleton* root){
