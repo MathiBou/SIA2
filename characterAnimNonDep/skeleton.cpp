@@ -84,26 +84,119 @@ Skeleton* Skeleton::setPoseInterpolation(std::string file1, int lastframe1, std:
 }
 
 
-Skeleton* Skeleton::transitionQuaternions(Skeleton* first, Skeleton* second, int nbTransitionFrames) {
-	Skeleton* root = create("hip", first->_offX, first->_offY, first->_offZ, NULL); 
+Skeleton* Skeleton::transitionQuaternions(Skeleton* root, Skeleton* second, int nbTransitionFrames) {
+	
+	/*Skeleton* root = create("hip", first->_offX, first->_offY, first->_offZ, NULL); 
 	root->_children = first->_children; 
 	root->_dofs = first->_dofs; 
+	for ((Skeleton* child : root->_children) && (Skeleton* childF : first->_children)) {
+		child = create(first->_name, first->_offX, first->_offY, first->_offZ, NULL);
+		root->_children = first->_children;
+		root->_dofs = first->_dofs;
+	}*/
+
+	/*Skeleton* root = first;*/
+
+	int nbFirst = root->_dofs.at(0)._values.size(); 
+	std::cout << "nb frames so far" << root->_dofs.at(0)._values.size() << endl ;
+
+	std::cout << "nb frames run" << second->_dofs.at(0)._values.size() << endl;
+	
+	double lastRX, lastRY, lastRZ;
+	lastRX = second->_dofs.at(3)._values.at(0);
+	lastRY = second->_dofs.at(4)._values.at(0);
+	lastRZ = second->_dofs.at(5)._values.at(0);
+
+	double lastTX, lastTY, lastTZ;
+	lastTX = second->_dofs.at(0)._values.at(0);
+	lastTY = second->_dofs.at(1)._values.at(0);
+	lastTZ = second->_dofs.at(2)._values.at(0);
+
+	cout << "LAST " << lastTX << " " << lastTY << " " << lastTZ << " " << lastRX << " " << lastRY << " " << lastRZ << endl;
+	loop(root, second, nbTransitionFrames, lastTX, lastTY, lastTZ, lastRX, lastRY, lastRZ);
+
+	std::cout << "NB frames in root : " << root->_dofs.at(0)._values.size() << endl;
+
+	updateTransitionFrames(nbFirst, nbTransitionFrames, root);
+
+	return root;
+}
+
+void Skeleton::loop(Skeleton* root, Skeleton* second, int nbTransitionFrames, double TX, double TY, double TZ, double RX, double RY, double RZ) {
+	static ofstream file("loop.txt", ios::out | ios::trunc);
+	
+	file << "loop " << root->_name << endl;
+	double offset;
+	double firstValue;
+	bool isRoot = (root->_name == "hip"); 
+
 
 	for (int i = 0; i < root->_dofs.size(); i++) {
 		//Add empty transition frames
 		for (int j = 0; j < nbTransitionFrames; j++) {
-			root->_dofs.at(i)._values.push_back(0); 
+			root->_dofs.at(i)._values.push_back(0);
 		}
 		//Add values for second anim
+		file << "nb frames in run : " << second->_dofs.at(0)._values.size() << endl;
 		for (int k = 0; k < second->_dofs.at(0)._values.size(); k++) {
-			root->_dofs.at(i)._values.push_back(second->_dofs.at(0)._values.at(k) );
+			if (k == 0) {
+				firstValue = second->_dofs.at(i)._values.at(0);
+				file << root->_name << "  i : " << i << endl;
+				file << "firstValue " << firstValue << endl ; 
+				}
+
+			if (isRoot) {
+				file << "loop IS ROOT" << endl; 
+				switch (i){
+				case 0: {
+					file << "case 0" << endl;
+					offset = TX;
+				}
+				case 1: {
+					offset = TY;
+				}
+				case 2: {
+					offset = TZ;
+				}
+				case 3: {
+					offset = RX;
+				}
+				case 4: {
+					offset = RY;
+				}
+				case 5: {
+					offset = RZ;
+				}
+				}
+			}
+			else {
+				file << "loop not ROOT" << endl;
+
+				switch (i){
+				case 0: {
+					offset = RX;
+				}
+				case 1: {
+					offset = RY;
+				}
+				case 2: {
+					offset = RZ;
+				}
+				}
+			}
+
+			file << "What joint : " << root->_name << endl;
+			file << "Dof i :" << i << endl;
+			file << "Offset :" << offset << endl;
+			file << "First value :" << firstValue << endl;
+
+			root->_dofs.at(i)._values.push_back( offset + (second->_dofs.at(i)._values.at(k) - firstValue));
 		}
 	}
 
-	cout << "NB frames in root : " << root->_dofs.at(0)._values.size() << endl;
-
-	return root;
 }
+
+
 
 
 
