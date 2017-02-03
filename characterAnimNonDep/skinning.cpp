@@ -129,9 +129,6 @@ void Skinning::computeWeightsSmooth() {
 	if (_skin == NULL) return;
 	if (_skel == NULL) return;
 	cout << "compute smooth weights" << endl;
-
-
-	
 	
 	//int i = 0;
 	for (int i = 0; i < _nbVtx; i++) {
@@ -160,36 +157,35 @@ void Skinning::computeWeightsSmooth() {
 					glm::vec3 vert = glm::vec3(vertex);
 					glm::vec3 u1 = vert - jointA;
 					glm::vec3 u2 = jointB - jointA;
-					float norm2 = u2.x*u2.x + u2.y*u2.y + u2.z*u2.z;
-
-					if (norm2 != 0) {
-						float p = glm::dot(u1, u2) / (norm2);
+					float norm_u2 = sqrt(u2.x*u2.x + u2.y*u2.y + u2.z*u2.z);
+					glm::vec3 cross = glm::cross(u1, u2);
+					float norm_cross = sqrt(cross.x*cross.x + cross.y*cross.y + cross.z*cross.z);
+					if (norm_u2 != 0) {
+						/*float p = norm_cross / (norm_u2);
 						if (p >= 0 && p <= 1) {
-							x = jointA + p*u2;
-							dist = glm::distance(vert, x);
-							if (dist < minDist) {
-								minDist = dist;
-								jointMin1 = j;
-								jointMin2 = fils;
-								//cout << _joints.at(jointMin1)->_name << endl;
-								//cout << _joints.at(jointMin2)->_name << endl;
-								dist1 = glm::distance(x, jointA);
-								dist2 = glm::distance(x, jointB);
+						x = jointA + p*u2;*/
+						dist = norm_cross / (norm_u2);
+						if (dist < minDist) {
+							minDist = dist;
+							jointMin1 = j;
+							jointMin2 = fils;
+							//cout << _joints.at(jointMin1)->_name << endl;
+							//cout << _joints.at(jointMin2)->_name << endl;
+							//dist1 = glm::distance(x, jointA);
+							//dist2 = glm::distance(x, jointB);
 
-							}
 						}
 					}
 				}
 			}
 		}
 
-		_weights[i][jointMin1] = dist1 / (dist1 + dist2);
-		_weights[i][jointMin2] = dist2 / (dist1 + dist2);
+		_weights[i][jointMin1] = 1;
+		_weights[i][jointMin2] =1;
 		for (int j = 0; j < _nbJoints; j++) {
 			//cout << _weights[i][j] << endl;
 		}
 		//cout << _weights[i][jointMin1] << " " << _weights[i][jointMin2] << endl;
-
 	}
 	for (int j = 0; j < _nbJoints; j++) {
 		cout << _joints.at(j)->_name << " " << _transfoInit[j][3][0] << " " << _transfoInit[j][3][1] << " " << _transfoInit[j][3][2] << endl;
