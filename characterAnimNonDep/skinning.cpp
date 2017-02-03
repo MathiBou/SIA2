@@ -128,19 +128,32 @@ void Skinning::computeTransfo(Skeleton *skel, int *idx) {
 void Skinning::computeWeightsSmooth() {
 	if (_skin == NULL) return;
 	if (_skel == NULL) return;
+
+	ofstream file("ceck.txt", ios::out | ios::trunc);
 	cout << "compute smooth weights" << endl;
-	
-	//int i = 0;
+	bool ok = false; 
+	float w1, w2; 
+	int i = 0;
 	for (int i = 0; i < _nbVtx; i++) {
-		double minDist = numeric_limits<double>::infinity();
+	//for (int i = 11133; i < 11134; i++) {
+		//double minDist = numeric_limits<double>::infinity();
+		double minDist = 1000;
 		double dist, dist1, dist2, weight = 0;
 		int jointMin1, jointMin2 = 0;
 		double sum = 0;
 		glm::vec4 vertex = _pointsInit[i];
 		//cout << "position = " << vertex.x << " " << vertex.y << " " << vertex.z << endl;
-		glm::vec3 jointA, jointB, x;
+		glm::vec3 jointA, jointB, x, head;
 		int fils;
-		for (int j = 0; j < _nbJoints; j++) {
+		for (int j = 0; j < _joints.size(); j++) {
+			if (_joints[j]->_name == "head") {
+				head = glm::vec3(_transfoInit[j][3][0], _transfoInit[j][3][1], _transfoInit[j][3][2]);
+				glm::vec3 vert = glm::vec3(vertex);
+				if (glm::distance(head, vert) < 2) {
+				//	cout << "HEAD" << endl;
+					ok = true; 
+				}
+			}
 			_weights[i][j] = 0;
 			jointA = glm::vec3(_transfoInit[j][3][0], _transfoInit[j][3][1], _transfoInit[j][3][2]);
 			for (unsigned int ichild = 0; ichild < _joints.at(j)->_children.size(); ichild++) {
@@ -150,10 +163,8 @@ void Skinning::computeWeightsSmooth() {
 						fils = m;
 					}
 				}
-
-				if (_joints.at(j)->_children.size() != 0) {
+			if (_joints.at(j)->_children.size() != 0) {
 					jointB = glm::vec3(_transfoInit[fils][3][0], _transfoInit[fils][3][1], _transfoInit[fils][3][2]);
-
 					glm::vec3 vert = glm::vec3(vertex);
 					glm::vec3 u1 = vert - jointA;
 					glm::vec3 u2 = jointB - jointA;
@@ -161,35 +172,73 @@ void Skinning::computeWeightsSmooth() {
 					glm::vec3 cross = glm::cross(u1, u2);
 					float norm_cross = sqrt(cross.x*cross.x + cross.y*cross.y + cross.z*cross.z);
 					if (norm_u2 != 0) {
-						/*float p = norm_cross / (norm_u2);
-						if (p >= 0 && p <= 1) {
-						x = jointA + p*u2;*/
-						dist = norm_cross / (norm_u2);
-						if (dist < minDist) {
-							minDist = dist;
-							jointMin1 = j;
-							jointMin2 = fils;
-							//cout << _joints.at(jointMin1)->_name << endl;
-							//cout << _joints.at(jointMin2)->_name << endl;
-							//dist1 = glm::distance(x, jointA);
-							//dist2 = glm::distance(x, jointB);
-
+						float p = glm::dot(u1, u2) / pow(norm_u2, 2);
+						if ((p >= 0 && p <= 1)) {
+							dist = norm_cross / (norm_u2);
 						}
+						else {
+							float distB = glm::distance(jointB, vert);
+							float distA = glm::distance(jointA, vert);
+							float min = min(distA, distB);
+							dist = min;
+						}
+						
+						if ((dist < minDist)) {
+								minDist = dist;
+								jointMin1 = j;
+								jointMin2 = fils;
+								if ((p >= 0 && p <= 1)) {
+									x = jointA + p*u2;
+
+									/*cout << "A " << jointA.x << " " << jointA.y << " " << jointA.z << endl;
+									cout << "B " << jointB.x << " " << jointB.y << " " << jointB.z << endl;
+									cout << "x " << x.x << " " << x.y << " " << x.z << endl;
+									cout << "p " << p << endl;*/
+
+									w1 = p;
+									w2 = 1 - p;
+									//cout << _joints.at(jointMin1)->_name << endl;
+									//cout << _joints.at(jointMin2)->_name << endl;
+									dist1 = glm::distance(x, jointA);
+									dist2 = glm::distance(x, jointB);
+								} else {
+										//cout << "NEW CASE" << endl;
+										w1 = 0;
+										w2 = 1;
+
+									}
+							}
+
+							}
+							
+							
+							}
+							
 					}
+
 				}
-			}
+		if (minDist > 13) {
+			file << "i :   " << i << endl; 
+			file << _joints.at(jointMin1)->_name << endl;
+			file << _joints.at(jointMin2)->_name << endl;
+
+		
 		}
 
-		_weights[i][jointMin1] = 1;
-		_weights[i][jointMin2] =1;
+		//cout << "MIN DIST FINAL  " << minDist << endl;
+
+		_weights[i][jointMin1] = w1;
+		
+		_weights[i][jointMin2] = w2;
 		for (int j = 0; j < _nbJoints; j++) {
 			//cout << _weights[i][j] << endl;
 		}
 		//cout << _weights[i][jointMin1] << " " << _weights[i][jointMin2] << endl;
 	}
 	for (int j = 0; j < _nbJoints; j++) {
-		cout << _joints.at(j)->_name << " " << _transfoInit[j][3][0] << " " << _transfoInit[j][3][1] << " " << _transfoInit[j][3][2] << endl;
+		//cout << _joints.at(j)->_name << " " << _transfoInit[j][3][0] << " " << _transfoInit[j][3][1] << " " << _transfoInit[j][3][2] << endl;
 	}
+	file.close(); 
 	cout << "end compute smooth weights" << endl;
 }
 
