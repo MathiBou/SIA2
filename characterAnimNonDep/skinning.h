@@ -66,6 +66,7 @@ public :
 	void animate();
 	// apply skinning to _skel :
 	void applySkinning();
+	double CylindricalDistance(glm::vec3 vert, int pere);
 
 };
 

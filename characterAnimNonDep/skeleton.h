@@ -72,7 +72,6 @@ public :
 
 	// Load from file (.bvh) :	
 	static Skeleton* createFromFile(std::string fileName);
-	Skeleton* interpolateFromFiles(std::string file1, std::string file2);
 
 	// Viewer methods :
 	void draw();

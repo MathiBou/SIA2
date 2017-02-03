@@ -375,7 +375,7 @@ void updateTransitionFramesQuaternion(int nbFrames, int nbTransitionFrames, Skel
 	for (int i = nbFrames; i < (nbFrames + nbTransitionFrames); i++) {
 		q = qglviewer::Quaternion::slerp(qFirst, qLast, t); 
 		t -= (1.0 / (float)nbTransitionFrames); 
-		Skeleton::toEulerianAngle(q, roll, pitch, yaw);
+		//Skeleton::toEulerianAngle(q, roll, pitch, yaw);
 		if (isRoot) {
 
 			root->_dofs.at(0)._values[i] = px;

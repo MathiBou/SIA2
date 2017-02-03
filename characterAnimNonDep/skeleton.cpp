@@ -403,26 +403,6 @@ void Skeleton::eulerToAxisAngle(double rx, double ry, double rz, int rorder, qgl
 	quaternionToAxisAngle(q, vaa);
 }
 
-void Skeleton::quaternionToAxisAngle(qglviewer::Quaternion q, qglviewer::Vec *vaa)
-{
-	double angle = 2.0*acos(q[3]);
-	qglviewer::Vec axis = qglviewer::Vec(q[0], q[1], q[2]);
-	const double sinus = sqrt(q[1] * q[1] + q[2] * q[2] + q[0] * q[0]);
-	if (sinus > 1E-8)
-		axis /= sinus;
-
-	if (angle > M_PI)
-	{
-		angle = 2.0*M_PI - angle;
-		axis = -axis;
-	}
-	*vaa = axis*angle;
-	//qglviewer::Vec axis2 = q.axis();
-	//qreal angle2 = q.angle();
-
-
-}
-
 
 void Skeleton::nbDofs() {
 	if (_dofs.empty()) return;

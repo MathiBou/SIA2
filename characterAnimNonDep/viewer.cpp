@@ -3,7 +3,7 @@
 
 using namespace std;
 
-std::string jointNameCol = "hip";
+std::string jointNameCol = "head";
 
 #if _SKINNING_GPU
 #define BUFFER_OFFSET(a) ((char*)NULL + (a))
