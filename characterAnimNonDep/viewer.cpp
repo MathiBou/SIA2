@@ -217,7 +217,7 @@ void Viewer::init()
   _root = NULL;
 
   _root = Skeleton::createFromFile("data/walk.bvh");
- /* _root = Skeleton::setPoseInterpolation("data/run.bvh", 0, "data/walk.bvh", 0, 0);
+ /* _root = Skeleton::transitionFromFiles("data/run.bvh", 0, "data/walk.bvh", 0, 0);
 
   //Transition Quaternions 
   _root = NULL;

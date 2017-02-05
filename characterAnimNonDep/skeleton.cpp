@@ -56,7 +56,7 @@ Skeleton* Skeleton::interpolateFromFiles(std::string file1, std::string file2) {
 	return root;
 }
 
-Skeleton* Skeleton::setPoseInterpolation(std::string file1, int lastframe1, std::string file2, int firstframe2, float interpolationValue) {
+Skeleton* Skeleton::transitionFromFiles(std::string file1, int lastframe1, std::string file2, int firstframe2, float interpolationValue) {
 
 	Skeleton* root = NULL;
 	cout << "Transition" << file1 << "  and  " << file2 << endl;
@@ -300,7 +300,7 @@ void Skeleton::eulerToMatrix(double rx, double ry, double rz, int rorder, glm::m
 	mz = glm::mat3(glm::vec3(cos(rz), -sin(rz), 0), glm::vec3(sin(rz), cos(rz), 0), glm::vec3(0, 0, 1));
 	switch (rorder) {
 	case 0:
-		*R = mx * my * mz;
+		*R = mx*my*mz;
 		break;
 	case 1:
 		*R = my*mz*mx;
@@ -322,56 +322,13 @@ void Skeleton::eulerToMatrix(double rx, double ry, double rz, int rorder, glm::m
 }
 void Skeleton::matrixToQuaternion(glm::mat3 R, qglviewer::Quaternion *q)
 {
-	/*float trace;
-	trace = R[0][0] + R[1][1] + R[2][2];
-	double q0, q1, q2, q3;
-	if (trace >= 0)
-	{
-	// Direct computation
-	const double s = sqrt(trace + 1.0) * 2.0;
-	q0 = (R[2][1] - R[1][2]) / s;
-	q1 = (R[0][2] - R[2][0]) / s;
-	q2 = (R[1][0] - R[0][1]) / s;
-	q3 = 0.25 * s;
-	}
-	else
-	{
-	// Computation depends on major diagonal term
-	if ((R[0][0] > R[1][1])&(R[0][0] > R[2][2]))
-	{
-	const double s = sqrt(1.0 + R[0][0] - R[1][1] - R[2][2]) * 2.0;
-	q0 = 0.25 * s;
-	q1 = (R[0][1] + R[1][0]) / s;
-	q2 = (R[0][2] + R[2][0]) / s;
-	q3 = (R[1][2] - R[2][1]) / s;
-	}
-	else
-	if (R[1][1] > R[2][2])
-	{
-	const double s = sqrt(1.0 + R[1][1] - R[0][0] - R[2][2]) * 2.0;
-	q0 = (R[0][1] + R[1][0]) / s;
-	q1 = 0.25 * s;
-	q2 = (R[1][2] + R[2][1]) / s;
-	q3 = (R[0][2] - R[2][0]) / s;
-	}
-	else
-	{
-	const double s = sqrt(1.0 + R[2][2] - R[0][0] - R[1][1]) * 2.0;
-	q0 = (R[0][2] + R[2][0]) / s;
-	q1 = (R[1][2] + R[2][1]) / s;
-	q2 = 0.25 * s;
-	q3 = (R[0][1] - R[1][0]) / s;
-	}
-	}
-	q->setValue(q0, q1, q2, q3);
-	(*q).normalize();
-	*/
 	double q3 = sqrt(1.0 + R[0][0] + R[1][1] + R[2][2]) / 2.0;
 	double q0 = (R[2][1] - R[1][2]) / (4 * q3);
 	double q1 = (R[0][2] - R[2][0]) / (4 * q3);
 	double q2 = (R[1][0] - R[0][1]) / (4 * q3);
 	q->setValue(q0, q1, q2, q3);
 }
+
 void Skeleton::quaternionToAxisAngle(qglviewer::Quaternion q, qglviewer::Vec *vaa)
 {
 	double angle = 2.0*acos(q[3]);
@@ -386,11 +343,8 @@ void Skeleton::quaternionToAxisAngle(qglviewer::Quaternion q, qglviewer::Vec *va
 		axis = -axis;
 	}
 	*vaa = axis*angle;
-	//qglviewer::Vec axis2 = q.axis();
-	//qreal angle2 = q.angle();
-
-
 }
+
 void Skeleton::eulerToAxisAngle(double rx, double ry, double rz, int rorder, qglviewer::Vec *vaa)
 {
 	// Euler -> matrix :
@@ -411,55 +365,17 @@ void Skeleton::nbDofs() {
 
 	int nbDofsR = 0;
 
-	// TO COMPLETE :
 	int isImplemented = 1;
 
 	double rx, ry, rz;
 	qglviewer::Vec vaa_prec, vaa;
 	double angle, angle_prec;
 
-	switch (_rorder) {
-	case roXYZ:
-		rx = _dofs[_dofs.size() - 3]._values[0];
-		ry = _dofs[_dofs.size() - 2]._values[0];
-		rz = _dofs[_dofs.size() - 1]._values[0];
-		break;
-	case roYZX:
-		rx = _dofs[_dofs.size() - 2]._values[0];
-		ry = _dofs[_dofs.size() - 1]._values[0];
-		rz = _dofs[_dofs.size() - 3]._values[0];
-		break;
-	case roZXY:
-		rx = _dofs[_dofs.size() - 1]._values[0];
-		ry = _dofs[_dofs.size() - 3]._values[0];
-		rz = _dofs[_dofs.size() - 2]._values[0];
-		break;
-	case roXZY:
-		rx = _dofs[_dofs.size() - 3]._values[0];
-		ry = _dofs[_dofs.size() - 1]._values[0];
-		rz = _dofs[_dofs.size() - 2]._values[0];
-		break;
-	case roYXZ:
-		rx = _dofs[_dofs.size() - 2]._values[0];
-		ry = _dofs[_dofs.size() - 3]._values[0];
-		rz = _dofs[_dofs.size() - 1]._values[0];
-		break;
-	case roZYX:
-		rx = _dofs[_dofs.size() - 1]._values[0];
-		ry = _dofs[_dofs.size() - 2]._values[0];
-		rz = _dofs[_dofs.size() - 3]._values[0];
-		break;
-	}
-	eulerToAxisAngle(rx, ry, rz, _rorder, &vaa_prec);
-	angle_prec = vaa_prec.norm();
-	vaa_prec.normalize();
-
+    //Fichiers pour conserver les valeurs des axes et des angles
 	ofstream file_axis(_name + "_axis.txt", ios::out | ios::trunc);
-	file_axis << 0 << " " << vaa_prec.x << " " << vaa_prec.y << " " << vaa_prec.z << endl;
 	ofstream file_angle(_name + "_angle.txt", ios::out | ios::trunc);
-	file_angle << 0 << " " << angle_prec << endl;
 
-	for (unsigned int j = 1; j < _dofs[0]._values.size(); j++) {
+	for (unsigned int j = 0; j < _dofs[0]._values.size(); j++) {
 		switch (_rorder) {
 		case roXYZ:
 			rx = _dofs[_dofs.size() - 3]._values[j];
@@ -492,30 +408,41 @@ void Skeleton::nbDofs() {
 			rz = _dofs[_dofs.size() - 3]._values[j];
 			break;
 		}
-		eulerToAxisAngle(rx, ry, rz, _rorder, &vaa);
-
-		angle = vaa.norm();
-		vaa.normalize();
-		file_axis << j << " " << vaa.x << " " << vaa.y << " " << vaa.z << endl;
-		file_angle << j << " " << angle << endl;
-
-		double val = (vaa_prec - vaa).norm();
-		double valOpp = (vaa_prec + vaa).norm(); //si orientation opposée
-		if (((val > tol) && (valOpp > 2 - tol)) || ((valOpp > tol) && (val > 2 - tol))) {
-			//if (val > tol) {
-			nbDofsR = 3;
-			break;
-		}
-		else if ((angle_prec - angle) > tol) {
-			nbDofsR = 1;
-		}
-		// Update vaaPrec
-		vaa_prec = vaa;
-		angle_prec = angle;
+        if (j == 0) {
+		eulerToAxisAngle(rx, ry, rz, _rorder, &vaa_prec);
+        angle_prec = vaa_prec.norm();
+        vaa_prec.normalize();
+        } else {
+        //conversion euler->axis-angle
+        eulerToAxisAngle(rx, ry, rz, _rorder, &vaa);
+        angle = vaa.norm();
+        vaa.normalize();
+        
+        //ecriture des valeurs dans les fichiers
+        file_axis << j << " " << vaa.x << " " << vaa.y << " " << vaa.z << endl;
+        file_angle << j << " " << angle << endl;
+            
+        //comparaison avec les valeurs precedentes
+        double val = (vaa_prec - vaa).norm();
+        double valOpp = (vaa_prec + vaa).norm(); //si orientation opposée
+        if (((val > tol) && (valOpp > 2 - tol)) || ((valOpp > tol) && (val > 2 - tol))) {
+            nbDofsR = 3;
+            break;
+        }
+        else if ((angle_prec - angle) > tol) {
+            nbDofsR = 1;
+        }
+            
+        //Mises a jour
+        vaa_prec = vaa;
+        angle_prec = angle;
+        }
 	}
-
+    
+    //fermeture des fichiers
 	file_axis.close();
 	file_angle.close();
+    
 	if (!isImplemented) return;
 	cout << _name << " : " << nbDofsR << " degree(s) of freedom in rotation\n";
 

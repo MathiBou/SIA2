@@ -78,7 +78,7 @@ public :
 	void rotateSkeleton();
 	void animate(int iframe=0);
 
-	static Skeleton* setPoseInterpolation(std::string file1, int lastframe1, std::string file2, int firstframe2, float interpolationValue);
+	static Skeleton* transitionFromFiles(std::string file1, int lastframe1, std::string file2, int firstframe2, float interpolationValue);
 	static Skeleton* interpolateFromFiles(std::string file1, std::string file2);
 
 	static Skeleton* transitionQuaternions(Skeleton* first, Skeleton* second, int nbTransitionFrames);

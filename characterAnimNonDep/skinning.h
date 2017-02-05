@@ -28,7 +28,8 @@ public :
 	std::vector<glm::mat4> _transfoCurr;			// current global transformation of bones
 
 	int _meth;	//method to compute weights 1 : computeWeights(), 0 : load from Maya
-	bool _skinningType; //type of skinning : 0 for hard skinning, 1 for smooth skinning
+	bool _smoothSkinning; //type of skinning : 0 for hard skinning, 1 for smooth skinning
+    bool _cylindricalDistance; //type of distance : 0 for euclidian distance, 1 for cylindrical distance
 	
 public :
 	Skinning() {
@@ -36,7 +37,8 @@ public :
 		_skel = NULL;
 		_nbJoints = 0;
 		_meth = 1;
-		_skinningType = 0;
+		_smoothSkinning = false;
+        _cylindricalDistance = true;
 	}
 	~Skinning() {
 	}
@@ -52,6 +54,9 @@ public :
 	void computeTransfo(Skeleton *skel, int *idx);
 	void getWeights(Skeleton *skel, int *idx);
 
+    //compute the cylindrical distance between a vertex and a joint
+    double cylindricalDistance(glm::vec3 vert, int pere);
+    
 	// build _weights :
 	void computeWeights();					// compute from data
 	void computeWeightsSmooth();
@@ -66,7 +71,7 @@ public :
 	void animate();
 	// apply skinning to _skel :
 	void applySkinning();
-	double CylindricalDistance(glm::vec3 vert, int pere);
+    
 
 };
 
